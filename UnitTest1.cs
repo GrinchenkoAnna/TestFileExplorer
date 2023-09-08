@@ -1,32 +1,58 @@
 using Avalonia.Controls;
 using Avalonia.LogicalTree;
 using Avalonia.VisualTree;
+using Avalonia.Interactivity;
+using FileExplorer.ViewModels;
+using static FileExplorer.ViewModels.DirectoryItemViewModel;
+using FileExplorer.Views;
+using DynamicData;
+using System.Collections.ObjectModel;
+using System.Drawing.Text;
 
 namespace TestFileExplorer
 {
     public class UnitTest1
     {
+        public ISynchronizationHelper? synchronizationHelper;
+
         [Fact]
-        public async void Test1()
+        public async void OpenDirectory()
         {
             var app = AvaloniaApp.GetApp();
             var mainWindow = AvaloniaApp.GetMainWindow();
-            int result_value = 3;
-
             await Task.Delay(100);
 
-            var menu = mainWindow.GetVisualDescendants().OfType<MenuItem>().First(m => m.Name == "menuitem_view");
-            var menuitem = menu.GetLogicalChildren().OfType<CheckBox>().First(mi => mi.Name == "navigation_panel");            
+            var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
 
-            var main_panel = mainWindow.GetVisualDescendants().OfType<Grid>().First(mp => mp.Name == "main_panel");
+            //какая-нибудь папка из диска C
+            var folder = new DirectoryViewModel
+                (
+                Path.GetFullPath
+                    (
+                        Directory.GetDirectories("C://").First().ToString()
+                    )
+                );         
 
-            menuitem.IsChecked = true; // кликнуть. так ничего не изменится
+            //функция открытия папки и добавления элементов в DirectoriesAndFiles
+            mainWindowViewModel.CurrentDirectoryItem.Open(folder);
 
-            await Task.Delay(100);
+            //подсчет элементов в директории
+            int count = Directory.GetDirectories(folder.FullName).Length
+                + Directory.GetFiles(folder.FullName).Length;
 
-            var widthOfMainPanel = main_panel.GetValue(Grid.ColumnSpanProperty);
+            //количество элементов в DirectoriesAndFiles
+            int result = 0;
 
-            Assert.True(widthOfMainPanel.Equals(result_value));
+            //подсчет элементов в DirectoriesAndFiles
+            foreach (var item in mainWindowViewModel.CurrentDirectoryItem.DirectoriesAndFiles)
+            {
+                result++;
+            }
+
+            await Task.Delay(50);     
+
+            //количество элементво должно совпадать
+            Assert.True(count == result, "кол-во добавленных эл-тов не совпадает с кол-вом существующих");       
         }       
     }
 }

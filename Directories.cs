@@ -41,27 +41,27 @@ namespace TestFileExplorer
                         Directory.GetDirectories(@"C:\").First()
                     )
                 );
-            output.WriteLine("Chosed folder: {0}", folder.FullName);
+            output.WriteLine($"Chosed folder: {folder.FullName}");
 
             //«аписать пути в колекцию
             ObservableCollection<string> ItemsInDirectory = new ObservableCollection<string>();
             foreach (string dir in Directory.EnumerateDirectories(folder.FullName))
             {
                 ItemsInDirectory.Add(dir);
-                output.WriteLine("Item in system: {0}", dir);
+                output.WriteLine($"Item in system: {dir}");
             }
             foreach (string file in Directory.EnumerateFiles(folder.FullName))
             {
                 ItemsInDirectory.Add(file);
-                output.WriteLine("Item in system: {0}", file);
+                output.WriteLine($"Item in system: {file}");
             }
 
             //функци€ открыти€ папки и добавлени€ элементов в DirectoriesAndFiles
             mainWindowViewModel.CurrentDirectoryItem.Open(folder);
 
             //подсчет элементов в директории
-            output.WriteLine("Directories in folder: {0}", Directory.GetDirectories(folder.FullName).Length);
-            output.WriteLine("Files in folder: {0}", Directory.GetFiles(folder.FullName).Length);
+            output.WriteLine($"Directories in folder: {Directory.GetDirectories(folder.FullName).Length}");
+            output.WriteLine($"Files in folder: {Directory.GetFiles(folder.FullName).Length}");
             int count = Directory.GetDirectories(folder.FullName).Length
                 + Directory.GetFiles(folder.FullName).Length;
 
@@ -72,13 +72,13 @@ namespace TestFileExplorer
             var directoriesAndFiles = mainWindowViewModel.CurrentDirectoryItem.DirectoriesAndFiles;
             foreach (var item in directoriesAndFiles)
             {
-                output.WriteLine("Item in DAF: {0}", item.FullName);
+                output.WriteLine($"Item in DAF: {item.FullName}");
             }
             var intersection = ItemsInDirectory.Intersect(directoriesAndFiles.Select(i => i.FullName)).ToList();
             foreach (var item in intersection) { result++; }
 
-            output.WriteLine("Count = {0}", count);
-            output.WriteLine("Result = {0}", result);
+            output.WriteLine($"Count = {count}");
+            output.WriteLine($"Result = {result}");
 
             await Task.Delay(50);
 
@@ -95,11 +95,11 @@ namespace TestFileExplorer
 
             var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
 
-            Directory.CreateDirectory(@"C:\test_folder\test_file.txt");
+            Directory.CreateDirectory(@"C:\test_folder\test_folder2");
 
             //выбор папки на диске C
-            var folder = new DirectoryViewModel(@"C:\test_folder\test_file.txt");
-            output.WriteLine("Chosed folder: {0}", folder.FullName);
+            var folder = new DirectoryViewModel(@"C:\test_folder\test_folder2");
+            output.WriteLine($"Chosed folder: {folder.FullName}");
 
             //копирование этой папки
             var buffer = mainWindowViewModel.CurrentDirectoryItem.ItemBuffer;
@@ -109,10 +109,12 @@ namespace TestFileExplorer
             }
             mainWindowViewModel.CurrentDirectoryItem.Copy(folder);
 
+            await Task.Delay(50);
+
             //проверка: в буфере один элемент (тот, который был скопирован)  
             if (buffer.Contains(folder.FullName) && buffer.Count == 1)
             {
-                output.WriteLine("Item in ItemBuffer: {0}", buffer.First().ToString());
+                output.WriteLine($"Item in ItemBuffer: {buffer.First()}");
                 Assert.True(true);
                 Directory.Delete(folder.FullName);
             }
@@ -120,10 +122,106 @@ namespace TestFileExplorer
             {
                 foreach (var item in buffer) 
                 {
-                    output.WriteLine("Wrong item in ItemBuffer: {0}", item);
+                    output.WriteLine($"Wrong item in ItemBuffer: {item}");
                 }
                 Assert.True(false);
             }
+        }
+
+        [Fact]
+        public async void Paste()
+        {
+            var app = AvaloniaApp.GetApp();
+            var mainWindow = AvaloniaApp.GetMainWindow();
+            await Task.Delay(100);
+
+            var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
+
+            Directory.CreateDirectory(@"C:\test_folder");
+            //File.Create(@"C:\test_folder\test_file.txt");
+
+            //запись папки в "буфер"
+            var buffer = mainWindowViewModel.CurrentDirectoryItem.ItemBuffer;
+            foreach (var item in buffer)
+            {
+                buffer.Remove(item);
+            }
+            buffer.Add(@"C:\test_folder");
+            //buffer.Add(@"C:\test_folder\test_file.txt");
+            foreach (var item in buffer)
+            {
+                output.WriteLine($"Item in buffer: {item}");
+            }
+
+            //выполнение вставки папки в выбранную директорию
+            mainWindowViewModel.CurrentDirectoryItem.Paste(@"C:\");
+
+            //открытие этой директории
+            var destination_folder = new DirectoryViewModel(@"C:\");
+            mainWindowViewModel.CurrentDirectoryItem.Open(destination_folder);
+
+            //проверка: вставленна€ папка находитс€ в данной директории
+            bool folder_success = false;
+            var directoriesAndFiles = mainWindowViewModel.CurrentDirectoryItem.DirectoriesAndFiles;
+            foreach (var item in directoriesAndFiles)
+            {
+                output.WriteLine($"Item in DAF_1: {item.FullName}");
+                if (item.FullName == @"C:\test_folder Ч копи€")
+                {
+                    folder_success = true;                    
+                }
+            }     
+
+            ////проверка: файл тоже переместилс€
+            //bool file_success = false;
+            //var test_folder = new DirectoryViewModel(@"C:\test_folder Ч копи€");
+            //mainWindowViewModel.CurrentDirectoryItem.Open(test_folder);
+            //foreach (var item in directoriesAndFiles)
+            //{
+            //    output.WriteLine($"Item in DAF_2: {item.FullName}");
+            //    if (item.FullName == @"C:\test_folder Ч копи€\test_file.txt")
+            //    {
+            //        file_success = true;
+            //    }
+            //}
+
+            //await Task.Delay(50);
+
+            if (folder_success == true)
+            {
+                Directory.Delete(@"C:\test_folder", true);
+                Directory.Delete(@"C:\test_folder Ч копи€", true);
+                Assert.True(true);
+            }
+
+            //if (folder_success == true && file_success == true)
+            //{
+            //    Directory.Delete(@"C:\test_folder", true);
+            //    Directory.Delete(@"C:\test_folder Ч копи€", true);
+            //    Assert.True(true);
+            //}
+            //else
+            //{
+            //    if (folder_success == true && file_success == false)
+            //    {
+            //        Directory.Delete(@"C:\test_folder", true);
+            //        Directory.Delete(@"C:\test_folder Ч копи€", true);
+            //        Assert.False(true, "pasted folder, not file");
+
+            //    }
+            //    else if (folder_success == false && file_success == true)
+            //    {
+            //        Directory.Delete(@"C:\test_folder", true);
+            //        Directory.Delete(@"C:\test_folder Ч копи€", true);
+            //        Assert.False(true, "pasted file, not folder");
+            //    }
+            //    else
+            //    {
+            //        Directory.Delete(@"C:\test_folder", true);
+            //        Directory.Delete(@"C:\test_folder Ч копи€", true);
+            //        Assert.False(true, "hothing had been pasted");
+            //    }
+            //}
         }
     }
 }

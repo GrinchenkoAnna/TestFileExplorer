@@ -12,6 +12,7 @@ using Xunit.Abstractions;
 using Xunit.Sdk;
 using System.Security.Claims;
 using System.IO;
+using System.Linq;
 
 namespace TestFileExplorer
 {
@@ -71,8 +72,9 @@ namespace TestFileExplorer
             {
                 output.WriteLine($"Item in DAF: {item.FullName}");
             }
-            var intersection = ItemsInDirectory.Intersect(directoriesAndFiles.Select(i => i.FullName)).ToList();
-            foreach (var item in intersection) { result++; }
+            var intersection1 = ItemsInDirectory.Intersect(directoriesAndFiles.Select(i => i.FullName)).ToList();
+            
+            foreach (var item in intersection1) { result++; }
 
             output.WriteLine($"Count = {count}");
             output.WriteLine($"Result = {result}");
@@ -682,12 +684,10 @@ namespace TestFileExplorer
             output.WriteLine("");
 
             //изменение элементов
-            Directory.Move(@"C:\sort_by_date_of_change_test_folder\Ron",
-                @"C:\sort_by_date_of_change_test_folder\Won-Won");
-            Directory.Move(@"C:\sort_by_date_of_change_test_folder\Hermione",
-                @"C:\sort_by_date_of_change_test_folder\HermioneGranger");
-            Directory.Move(@"C:\sort_by_date_of_change_test_folder\Harry",
-                @"C:\sort_by_date_of_change_test_folder\HarryPotter");            
+            Directory.SetLastWriteTime(@"C:\sort_by_date_of_change_test_folder\Harry", new DateTime(1980,7,31));
+            Directory.SetLastWriteTime(@"C:\sort_by_date_of_change_test_folder\Ron", new DateTime(1980,3,1));
+            Directory.SetLastWriteTime(@"C:\sort_by_date_of_change_test_folder\Hermione", new DateTime(1979,9,19));
+                     
 
             //выполнение тестируемой функции
             mainWindowViewModel.CurrentDirectoryItem.SortByDateOfChange(folder.FullName);
@@ -699,8 +699,8 @@ namespace TestFileExplorer
             }
 
             //результат
-            if (directoriesAndFiles.First().Name == "Won-Won"
-                && directoriesAndFiles.Last().Name == "HarryPotter")
+            if (directoriesAndFiles.First().Name == "Hermione"
+                && directoriesAndFiles.Last().Name == "Harry")
             {
                 Directory.Delete(@"C:\sort_by_date_of_change_test_folder", true);
                 Assert.True(true);
@@ -710,6 +710,144 @@ namespace TestFileExplorer
                 Directory.Delete(@"C:\sort_by_date_of_change_test_folder", true);
                 Assert.True(false);
             }
+        }
+
+        [Fact]
+        public async void CreateNewFolderTest()
+        {
+            var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
+
+            //создание нужных элементов
+            Directory.CreateDirectory(@"C:\create_new_folder_test_folder");
+
+            //добавление их в DAF через функцию Open
+            var folder = new DirectoryViewModel(@"C:\create_new_folder_test_folder");
+            mainWindowViewModel.CurrentDirectoryItem.Open(folder);
+
+            //просмотр коллекции до создания папок
+            var directoriesAndFiles = mainWindowViewModel.CurrentDirectoryItem.DirectoriesAndFiles;
+            if (directoriesAndFiles.Count == 0)
+            {
+                output.WriteLine("There is no elements in DAF");
+            }
+            else
+            {
+                foreach (var item in directoriesAndFiles)
+                {
+                    output.WriteLine($"Item in DAF_before: {item.FullName}");
+                }
+            }            
+            output.WriteLine("");
+
+            //создание новой папки в C:\create_new_folder_test_folder
+            mainWindowViewModel.CurrentDirectoryItem.CreateNewFolder(@"C:\create_new_folder_test_folder");
+            mainWindowViewModel.CurrentDirectoryItem.CreateNewFolder(@"C:\create_new_folder_test_folder");
+
+            //обновление DAF через функцию Open
+            mainWindowViewModel.CurrentDirectoryItem.Open(folder);
+
+            //просмотр коллекции до создания папок
+            bool newfolder_success = false;
+            bool newfolder1_success = false;
+            foreach (var item in directoriesAndFiles)
+            {
+                if (item.Name == "Новая папка")
+                {
+                    newfolder_success = true;
+                }
+                if (item.Name == "Новая папка(1)")
+                {
+                    newfolder1_success = true;
+                }
+                output.WriteLine($"Item in DAF_after: {item.FullName}");
+            }
+
+            //очистка директории
+            Directory.Delete(@"C:\create_new_folder_test_folder", true);
+
+            //результат
+            if (newfolder_success && newfolder1_success)
+            {
+                Assert.True(true);
+            }
+            else if (newfolder_success && !newfolder1_success)
+            {
+                Assert.True(false, "not created Новая папка(2)");
+            }
+            else if (!newfolder_success && newfolder1_success)
+            {
+                Assert.True(false, "not created Новая папка");
+            }
+            else
+            {
+                Assert.True(false, "not created any folder");
+            }
+        }
+
+        [Fact]
+        public async void OpenTreeTest() //доработать с учетом Subfolders
+        {
+            var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
+
+            ObservableCollection<string> ItemsMustBeInTree = new ObservableCollection<string>();
+            ObservableCollection<FileEntityViewModel> LogicalDrives = new ObservableCollection<FileEntityViewModel>();
+            int count = 0;
+            int result = 0;
+
+            mainWindowViewModel.CurrentDirectoryItem.Open("Мой компьютер");
+            var directoriesAndFiles = mainWindowViewModel.CurrentDirectoryItem.DirectoriesAndFiles;
+            foreach (var item in directoriesAndFiles)
+            {
+                output.WriteLine($"Must be in tree: {item.FullName}");
+                ItemsMustBeInTree.Add(item.FullName);
+                LogicalDrives.Add(item);
+                count++;
+            }
+            foreach (var logical_drive in LogicalDrives) 
+            {
+                mainWindowViewModel.CurrentDirectoryItem.Open(logical_drive);
+                foreach (var item in directoriesAndFiles)
+                {
+                    output.WriteLine($"Must be in tree: {item.FullName}");
+                    ItemsMustBeInTree.Add(item.FullName);
+                    count++;
+                }
+            }
+            output.WriteLine("");
+
+
+            await mainWindowViewModel.CurrentDirectoryItem.OpenTree();
+            var tree = mainWindowViewModel.CurrentDirectoryItem.TreeItems;
+            foreach (var item in tree)
+            {
+                output.WriteLine($"Is in tree: {item.FullName}");                
+                ItemsMustBeInTree.Add(item.FullName);
+                count++;
+            }
+            output.WriteLine("");
+
+
+            var intersection1 = ItemsMustBeInTree.Intersect<string>(tree.Select(i => i.FullName)).ToList();
+            foreach (var item in tree)
+            {
+                var intersection2 = ItemsMustBeInTree.Intersect<string>(item.Subfolders.Select(i => i.FullName)).ToList();
+                foreach (var i in intersection2)
+                {
+                    output.WriteLine($"Intersection: {i}");
+                    result++;
+                }
+            }
+            foreach (var item in intersection1) 
+            {
+                output.WriteLine($"Intersection: {item}");
+                result++; 
+            }
+
+            output.WriteLine($"Count = {count}");
+            output.WriteLine($"Result = {result}");
+
+            //количество элементво должно совпадать
+            Assert.True(count == result);
         }
     }
 }

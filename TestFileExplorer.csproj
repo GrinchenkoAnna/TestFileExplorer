@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FileExplorer\FileExplorer.csproj" />
+    <ProjectReference Include="..\FileExprorer\FileExplorer.csproj" />
   </ItemGroup>
 
 </Project>

@@ -79,8 +79,6 @@ namespace TestFileExplorer
             output.WriteLine($"Count = {count}");
             output.WriteLine($"Result = {result}");
 
-            await Task.Delay(50);
-
             //количество элементво должно совпадать
             Assert.True(count == result);
         }
@@ -103,8 +101,6 @@ namespace TestFileExplorer
                 buffer.Remove(item);
             }
             mainWindowViewModel.CurrentDirectoryItem.Copy(folder);
-
-            await Task.Delay(50);
 
             //проверка: в буфере один элемент (тот, который был скопирован)  
             if (buffer.Contains(folder.FullName) && buffer.Count == 1)
@@ -141,8 +137,6 @@ namespace TestFileExplorer
                 buffer.Remove(item);
             }
             mainWindowViewModel.CurrentDirectoryItem.Cut(folder);
-
-            await Task.Delay(50);
 
             //проверка: в буфере один элемент (тот, который был скопирован)  
             if (buffer.Contains(folder.FullName) && buffer.Count == 1)
@@ -213,8 +207,6 @@ namespace TestFileExplorer
             //        file_success = true;
             //    }
             //}
-
-            //await Task.Delay(50);
 
             if (folder_success == true)
             {
@@ -598,7 +590,6 @@ namespace TestFileExplorer
             }            
         }
 
-
         [Fact]
         public async void SortByNameTest()
         {
@@ -785,17 +776,20 @@ namespace TestFileExplorer
         }
 
         [Fact]
-        public async void OpenTreeTest() //доработать с учетом Subfolders
+        public async void OpenTreeTest()
         {
             var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
 
+            //коллекции для элементов, которые должны быть в дереве
             ObservableCollection<string> ItemsMustBeInTree = new ObservableCollection<string>();
             ObservableCollection<FileEntityViewModel> LogicalDrives = new ObservableCollection<FileEntityViewModel>();
             int count = 0;
             int result = 0;
 
-            mainWindowViewModel.CurrentDirectoryItem.Open("Мой компьютер");
+            //добавление в DirectoriesAndFiles элементов через функцию OpenDirectory для заполнения коллекций
+            mainWindowViewModel.CurrentDirectoryItem.OpenDirectory();
             var directoriesAndFiles = mainWindowViewModel.CurrentDirectoryItem.DirectoriesAndFiles;
+            //сначала заполняется коллекция для логических дисков
             foreach (var item in directoriesAndFiles)
             {
                 output.WriteLine($"Must be in tree: {item.FullName}");
@@ -803,6 +797,7 @@ namespace TestFileExplorer
                 LogicalDrives.Add(item);
                 count++;
             }
+            //в каждом диске (элементе коллекции для дисков) производится перебор и добавление элементов
             foreach (var logical_drive in LogicalDrives) 
             {
                 mainWindowViewModel.CurrentDirectoryItem.Open(logical_drive);
@@ -815,19 +810,29 @@ namespace TestFileExplorer
             }
             output.WriteLine("");
 
-
+            //запускается заполнение дерева
             await mainWindowViewModel.CurrentDirectoryItem.OpenTree();
             var tree = mainWindowViewModel.CurrentDirectoryItem.TreeItems;
+            output.WriteLine($"items in tree: {tree.Count}");
             foreach (var item in tree)
             {
-                output.WriteLine($"Is in tree: {item.FullName}");                
-                ItemsMustBeInTree.Add(item.FullName);
-                count++;
+                output.WriteLine($"Is in tree (root): {item.FullName}");
+                foreach (var i in item.Subfolders)
+                {
+                    output.WriteLine($"Is in tree: {i.FullName}");
+                }
             }
             output.WriteLine("");
 
-
+            //находится пересечение коллекций
+            //сначала перебираются сами логические диски            
             var intersection1 = ItemsMustBeInTree.Intersect<string>(tree.Select(i => i.FullName)).ToList();
+            foreach (var item in intersection1) 
+            {
+                output.WriteLine($"Intersection (root): {item}");
+                result++; 
+            }
+            //потом перебираются субдиректории логических дисков
             foreach (var item in tree)
             {
                 var intersection2 = ItemsMustBeInTree.Intersect<string>(item.Subfolders.Select(i => i.FullName)).ToList();
@@ -837,17 +842,48 @@ namespace TestFileExplorer
                     result++;
                 }
             }
-            foreach (var item in intersection1) 
-            {
-                output.WriteLine($"Intersection: {item}");
-                result++; 
-            }
+            output.WriteLine("");
 
             output.WriteLine($"Count = {count}");
             output.WriteLine($"Result = {result}");
 
             //количество элементво должно совпадать
             Assert.True(count == result);
+        }
+
+        [Fact]
+        public async void OnMoveBackTest()
+        {
+            var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
+
+            Directory.CreateDirectory(@"C:\on_move_test_folder");
+            Directory.CreateDirectory(@"C:\on_move_test_folder\folder_1");
+            Directory.CreateDirectory(@"C:\on_move_test_folder\folder_2");
+            Directory.CreateDirectory(@"C:\on_move_test_folder\folder_3");
+            Directory.CreateDirectory(@"C:\on_move_test_folder\folder_1\folder_11");
+            Directory.CreateDirectory(@"C:\on_move_test_folder\folder_1\folder_12");
+            
+            var folder = new DirectoryViewModel(@"C:\on_move_test_folder");
+            var folder_1 = new DirectoryViewModel(@"C:\on_move_test_folder\folder_1");
+            
+            mainWindowViewModel.CurrentDirectoryItem.Open(folder);
+            mainWindowViewModel.CurrentDirectoryItem.Open(folder_1);
+            var directoriesAndFiles = mainWindowViewModel.CurrentDirectoryItem.DirectoriesAndFiles;
+            output.WriteLine($"Current Directory: {mainWindowViewModel.CurrentDirectoryItem.FilePath}");
+            mainWindowViewModel.CurrentDirectoryItem.OnMoveBack(folder_1.FullName);
+            output.WriteLine($"Current Directory: {mainWindowViewModel.CurrentDirectoryItem.FilePath}");
+
+            int result = 0;
+
+            foreach (var item in directoriesAndFiles)
+            {
+                if (item.FullName == @"C:\on_move_test_folder\folder_1") { result++; }
+                if (item.FullName == @"C:\on_move_test_folder\folder_2") { result++; }
+                if (item.FullName == @"C:\on_move_test_folder\folder_3") { result++; }
+            }
+            output.WriteLine($"Result = {result}");
+
+            Assert.True(result == 3);
         }
     }
 }

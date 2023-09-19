@@ -856,16 +856,22 @@ namespace TestFileExplorer
         {
             var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
 
-            Directory.CreateDirectory(@"C:\on_move_test_folder");
-            Directory.CreateDirectory(@"C:\on_move_test_folder\folder_1");
-            Directory.CreateDirectory(@"C:\on_move_test_folder\folder_2");
-            Directory.CreateDirectory(@"C:\on_move_test_folder\folder_3");
-            Directory.CreateDirectory(@"C:\on_move_test_folder\folder_1\folder_11");
-            Directory.CreateDirectory(@"C:\on_move_test_folder\folder_1\folder_12");
-            
+            //создание тестовых каталогов
+            if (!Directory.Exists(@"C:\on_move_test_folder"))
+            {
+                Directory.CreateDirectory(@"C:\on_move_test_folder");
+                Directory.CreateDirectory(@"C:\on_move_test_folder\folder_1");
+                Directory.CreateDirectory(@"C:\on_move_test_folder\folder_2");
+                Directory.CreateDirectory(@"C:\on_move_test_folder\folder_3");
+                Directory.CreateDirectory(@"C:\on_move_test_folder\folder_1\folder_11");
+                Directory.CreateDirectory(@"C:\on_move_test_folder\folder_1\folder_12");
+            }
+
+            //создание объектов папок для теста
             var folder = new DirectoryViewModel(@"C:\on_move_test_folder");
             var folder_1 = new DirectoryViewModel(@"C:\on_move_test_folder\folder_1");
             
+            //создание истории: последовательное открытие в приложении нужных каталогов
             mainWindowViewModel.CurrentDirectoryItem.Open(folder);
             mainWindowViewModel.CurrentDirectoryItem.Open(folder_1);
             var directoriesAndFiles = mainWindowViewModel.CurrentDirectoryItem.DirectoriesAndFiles;
@@ -875,14 +881,173 @@ namespace TestFileExplorer
 
             int result = 0;
 
+            //проверка: какие элементы есть в получившейся коллекции (нужная ли папка открыта)
             foreach (var item in directoriesAndFiles)
             {
+                output.WriteLine($"Item in DAF: {item.FullName}");
                 if (item.FullName == @"C:\on_move_test_folder\folder_1") { result++; }
                 if (item.FullName == @"C:\on_move_test_folder\folder_2") { result++; }
                 if (item.FullName == @"C:\on_move_test_folder\folder_3") { result++; }
             }
             output.WriteLine($"Result = {result}");
 
+            //удаление созданных для тестов каталогов
+            Directory.Delete(@"C:\on_move_test_folder", true);
+
+            //результат
+            Assert.True(result == 3);
+        }
+
+        [Fact]
+        public async void OnMoveForwardTest()
+        {
+            var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
+
+            //создание тестовых каталогов
+            if (!Directory.Exists(@"C:\on_move_test_folder"))
+            {
+                Directory.CreateDirectory(@"C:\on_move_test_folder");
+                Directory.CreateDirectory(@"C:\on_move_test_folder\folder_1");
+                Directory.CreateDirectory(@"C:\on_move_test_folder\folder_2");
+                Directory.CreateDirectory(@"C:\on_move_test_folder\folder_3");
+                Directory.CreateDirectory(@"C:\on_move_test_folder\folder_1\folder_11");
+                Directory.CreateDirectory(@"C:\on_move_test_folder\folder_1\folder_12");
+            }
+
+            //создание объектов папок для теста
+            var folder = new DirectoryViewModel(@"C:\on_move_test_folder");
+            var folder_1 = new DirectoryViewModel(@"C:\on_move_test_folder\folder_1");
+
+            //создание истории: последовательное открытие в приложении нужных каталогов
+            mainWindowViewModel.CurrentDirectoryItem.Open(folder);
+            mainWindowViewModel.CurrentDirectoryItem.Open(folder_1);
+            mainWindowViewModel.CurrentDirectoryItem.OnMoveBack(folder_1.FullName);
+            output.WriteLine($"Current Directory: {mainWindowViewModel.CurrentDirectoryItem.FilePath}");
+            mainWindowViewModel.CurrentDirectoryItem.OnMoveForward(folder_1.FullName);
+            output.WriteLine($"Current Directory: {mainWindowViewModel.CurrentDirectoryItem.FilePath}");
+
+            var directoriesAndFiles = mainWindowViewModel.CurrentDirectoryItem.DirectoriesAndFiles;
+
+            int result = 0;
+
+            //проверка: какие элементы есть в получившейся коллекции (нужная ли папка открыта)
+            foreach (var item in directoriesAndFiles)
+            {
+                output.WriteLine($"Item in DAF: {item.FullName}");
+                if (item.FullName == @"C:\on_move_test_folder\folder_1\folder_11") { result++; }
+                if (item.FullName == @"C:\on_move_test_folder\folder_1\folder_12") { result++; }
+            }
+            output.WriteLine($"Result = {result}");
+
+            //удаление созданных для тестов каталогов
+            Directory.Delete(@"C:\on_move_test_folder", true);
+
+            //результат
+            Assert.True(result == 2);
+        }
+
+        [Fact]
+        public async void OnMoveUpTest()
+        {
+            var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
+
+            //создание тестовых каталогов
+            if (!Directory.Exists(@"C:\on_move_test_folder"))
+            {
+                Directory.CreateDirectory(@"C:\on_move_test_folder");
+                Directory.CreateDirectory(@"C:\on_move_test_folder\folder_1");
+                Directory.CreateDirectory(@"C:\on_move_test_folder\folder_2");
+                Directory.CreateDirectory(@"C:\on_move_test_folder\folder_3");
+                Directory.CreateDirectory(@"C:\on_move_test_folder\folder_1\folder_11");
+                Directory.CreateDirectory(@"C:\on_move_test_folder\folder_1\folder_12");
+            }
+
+            //создание объектов папок для теста
+            var folder = new DirectoryViewModel(@"C:\on_move_test_folder");
+            var folder_1 = new DirectoryViewModel(@"C:\on_move_test_folder\folder_1");
+            var folder_12 = new DirectoryViewModel(@"C:\on_move_test_folder\folder_1\folder_12");
+
+            //создание истории: последовательное открытие в приложении нужных каталогов
+            mainWindowViewModel.CurrentDirectoryItem.Open(folder);
+            mainWindowViewModel.CurrentDirectoryItem.Open(folder_1);
+            mainWindowViewModel.CurrentDirectoryItem.Open(folder_12);
+            output.WriteLine($"Current Directory: {mainWindowViewModel.CurrentDirectoryItem.FilePath}");
+            mainWindowViewModel.CurrentDirectoryItem.OnMoveUp(folder_12.FullName);
+            output.WriteLine($"Current Directory: {mainWindowViewModel.CurrentDirectoryItem.FilePath}");
+
+            var directoriesAndFiles = mainWindowViewModel.CurrentDirectoryItem.DirectoriesAndFiles;
+
+            int result = 0;
+
+            //проверка: какие элементы есть в получившейся коллекции (нужная ли папка открыта)
+            foreach (var item in directoriesAndFiles)
+            {
+                output.WriteLine($"Item in DAF: {item.FullName}");
+                if (item.FullName == @"C:\on_move_test_folder\folder_1\folder_11") { result++; }
+                if (item.FullName == @"C:\on_move_test_folder\folder_1\folder_12") { result++; }
+            }
+            output.WriteLine($"Result = {result}");
+
+            //удаление созданных для тестов каталогов
+            Directory.Delete(@"C:\on_move_test_folder", true);
+
+            //результат
+            Assert.True(result == 2);
+        }
+
+        [Fact]
+        public async void SearchTest()
+        {
+            var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
+
+            //создание тестовых каталогов
+            if (!Directory.Exists(@"C:\search_test_folder"))
+            {
+                Directory.CreateDirectory(@"C:\search_test_folder");
+                Directory.CreateDirectory(@"C:\search_test_folder\NancyDrew");
+                Directory.CreateDirectory(@"C:\search_test_folder\BessMarvin");
+                Directory.CreateDirectory(@"C:\search_test_folder\GeorgeFan");
+                Directory.CreateDirectory(@"C:\search_test_folder\4 8 15 16 23 42");
+                Directory.CreateDirectory(@"C:\search_test_folder\Ut6QIanQ");
+            }            
+
+            //создание объектов папок для теста
+            var folder = new DirectoryViewModel(@"C:\search_test_folder");
+            var folder_nancy = new DirectoryViewModel(@"C:\search_test_folder\NancyDrew");
+            var folder_bess = new DirectoryViewModel(@"C:\search_test_folder\BessMarvin");
+            var folder_jess = new DirectoryViewModel(@"C:\search_test_folder\GeorgeFan");
+            var folder_lost = new DirectoryViewModel(@"C:\search_test_folder\4 8 15 16 23 42");
+            var folder_password = new DirectoryViewModel(@"C:\search_test_folder\Ut6QIanQ");
+
+            //открытие директории, в которой будет происходить поиск
+            //(добавление в DAF элементов через функцию Open)
+            mainWindowViewModel.CurrentDirectoryItem.Open(folder);
+            var directoriesAndFiles = mainWindowViewModel.CurrentDirectoryItem.DirectoriesAndFiles;
+            foreach (var item in directoriesAndFiles)
+            {
+                output.WriteLine($"Item in DAF_before: {item.FullName}");
+            }
+            output.WriteLine("");
+
+            //вызов тестируемой функции (изменение DAF через нее)
+            mainWindowViewModel.CurrentDirectoryItem.Search("an");
+
+            //проверка: какие элементы есть в получившейся коллекции (нужная ли папка открыта)
+            int result = 0;
+            foreach (var item in directoriesAndFiles)
+            {
+                output.WriteLine($"Item in DAF_after: {item.FullName}");
+                if (item.FullName == @"C:\search_test_folder\NancyDrew") { result++; }
+                if (item.FullName == @"C:\search_test_folder\GeorgeFan") { result++; }
+                if (item.FullName == @"C:\search_test_folder\Ut6QIanQ") { result++; }
+            }
+            output.WriteLine("");
+            output.WriteLine($"Result = {result}");
+
+            //удаление созданных для тестов каталогов
+            Directory.Delete(@"C:\search_test_folder", true);
+
+            //результат
             Assert.True(result == 3);
         }
     }

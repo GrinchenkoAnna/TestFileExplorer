@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\user\\Documents\\GitHub\\TestFileExplorer\\TestFileExplorer.csproj": {}
+    "C:\\Users\\Anna\\Documents\\GitHub\\TestFileExplorer\\TestFileExplorer.csproj": {}
   },
   "projects": {
-    "C:\\Users\\user\\Documents\\GitHub\\FileExprorer\\FileExplorer.csproj": {
+    "C:\\Users\\Anna\\Documents\\GitHub\\FileExplorer\\FileExplorer.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\user\\Documents\\GitHub\\FileExprorer\\FileExplorer.csproj",
+        "projectUniqueName": "C:\\Users\\Anna\\Documents\\GitHub\\FileExplorer\\FileExplorer.csproj",
         "projectName": "FileExplorer",
-        "projectPath": "C:\\Users\\user\\Documents\\GitHub\\FileExprorer\\FileExplorer.csproj",
-        "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\user\\Documents\\GitHub\\FileExprorer\\obj\\",
+        "projectPath": "C:\\Users\\Anna\\Documents\\GitHub\\FileExplorer\\FileExplorer.csproj",
+        "packagesPath": "C:\\Users\\Anna\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Anna\\Documents\\GitHub\\FileExplorer\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\user\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Anna\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -93,17 +93,17 @@
         }
       }
     },
-    "C:\\Users\\user\\Documents\\GitHub\\TestFileExplorer\\TestFileExplorer.csproj": {
+    "C:\\Users\\Anna\\Documents\\GitHub\\TestFileExplorer\\TestFileExplorer.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\user\\Documents\\GitHub\\TestFileExplorer\\TestFileExplorer.csproj",
+        "projectUniqueName": "C:\\Users\\Anna\\Documents\\GitHub\\TestFileExplorer\\TestFileExplorer.csproj",
         "projectName": "TestFileExplorer",
-        "projectPath": "C:\\Users\\user\\Documents\\GitHub\\TestFileExplorer\\TestFileExplorer.csproj",
-        "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\user\\Documents\\GitHub\\TestFileExplorer\\obj\\",
+        "projectPath": "C:\\Users\\Anna\\Documents\\GitHub\\TestFileExplorer\\TestFileExplorer.csproj",
+        "packagesPath": "C:\\Users\\Anna\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Anna\\Documents\\GitHub\\TestFileExplorer\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\user\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Anna\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -117,8 +117,8 @@
           "net6.0": {
             "targetAlias": "net6.0",
             "projectReferences": {
-              "C:\\Users\\user\\Documents\\GitHub\\FileExprorer\\FileExplorer.csproj": {
-                "projectPath": "C:\\Users\\user\\Documents\\GitHub\\FileExprorer\\FileExplorer.csproj"
+              "C:\\Users\\Anna\\Documents\\GitHub\\FileExplorer\\FileExplorer.csproj": {
+                "projectPath": "C:\\Users\\Anna\\Documents\\GitHub\\FileExplorer\\FileExplorer.csproj"
               }
             }
           }
@@ -136,6 +136,10 @@
             "Avalonia.Headless": {
               "target": "Package",
               "version": "[0.10.19, )"
+            },
+            "MSTest.TestFramework": {
+              "target": "Package",
+              "version": "[3.1.1, )"
             },
             "Microsoft.NET.Test.Sdk": {
               "target": "Package",

@@ -13,6 +13,8 @@ using Xunit.Sdk;
 using System.Security.Claims;
 using System.IO;
 using System.Linq;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Assert = Xunit.Assert;
 
 namespace TestFileExplorer
 {
@@ -849,6 +851,47 @@ namespace TestFileExplorer
 
             //количество элементво должно совпадать
             Assert.True(count == result);
+        }
+
+        [Fact]
+        public async void GetSubfoldersTest()
+        {
+            var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
+
+            //создание тестовых каталогов
+            if (!Directory.Exists(@"C:\get_subfolders_test_folder"))
+            {
+                Directory.CreateDirectory(@"C:\get_subfolders_test_folder");
+                Directory.CreateDirectory(@"C:\get_subfolders_test_folder\folder_1");
+                Directory.CreateDirectory(@"C:\get_subfolders_test_folder\folder_2");
+                Directory.CreateDirectory(@"C:\get_subfolders_test_folder\folder_3");
+                File.Create(@"C:\get_subfolders_test_folder\file_1.txt");
+                File.Create(@"C:\get_subfolders_test_folder\file_2.txt");
+                File.Create(@"C:\get_subfolders_test_folder\file_3.c");
+                File.Create(@"C:\get_subfolders_test_folder\file_4.cpp");
+                File.Create(@"C:\get_subfolders_test_folder\file_5.cs");
+            }
+
+            //коллекция для хранения результатов отработки функции
+            ObservableCollection<FileEntityViewModel> collection = new ObservableCollection<FileEntityViewModel>();
+            collection = mainWindowViewModel.CurrentDirectoryItem.GetSubfolders(@"C:\get_subfolders_test_folder");
+
+            //создание коллекции нужных результатов через функцию Open
+            var test_folder = new DirectoryViewModel(@"C:\get_subfolders_test_folder");            
+            var directoriesAndFiles = mainWindowViewModel.CurrentDirectoryItem.DirectoriesAndFiles;
+            mainWindowViewModel.CurrentDirectoryItem.Open(test_folder);
+
+            //сохранение FullName свойства элемента коллекции
+            List<string> path_collection = new List<string>(); 
+            foreach (var item in collection)
+            {
+                path_collection.Add(item.FullName);
+            }
+            
+            //проверка
+            var intersection = path_collection.Intersect<string>(directoriesAndFiles.Select(item => item.FullName)).ToList();
+            Directory.Delete(@"C:\get_subfolders_test_folder", true);
+            Assert.True(intersection.Count == 8);
         }
 
         [Fact]

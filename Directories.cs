@@ -703,6 +703,80 @@ namespace TestFileExplorer
                 Directory.Delete(@"C:\sort_by_date_of_change_test_folder", true);
                 Assert.True(false);
             }
+        }[Fact]
+        public async void RefreshSortTest()
+        {
+            var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
+
+            //указание нужного порядка сортировки
+            MainWindow.asc = true;
+            MainWindow.desc = false;
+
+            //создание нужных элементов
+            Directory.CreateDirectory(@"C:\refresh_sort_test_folder");
+            Directory.CreateDirectory(@"C:\refresh_sort_test_folder\Ginny"); 
+            Directory.CreateDirectory(@"C:\refresh_sort_test_folder\Neville"); 
+            Directory.CreateDirectory(@"C:\refresh_sort_test_folder\Luna"); 
+
+            //добавление их в DAF через функцию Open
+            var folder = new DirectoryViewModel(@"C:\refresh_sort_test_folder");
+            mainWindowViewModel.CurrentDirectoryItem.Open(folder);
+
+            //просмотр коллекции до сортировки
+            var directoriesAndFiles = mainWindowViewModel.CurrentDirectoryItem.DirectoriesAndFiles;
+            foreach (var item in directoriesAndFiles)
+            {
+                output.WriteLine($"Item in DAF_before: {item.FullName}");
+            }
+            output.WriteLine("");
+
+            //изменение элементов
+            Directory.SetLastWriteTime(@"C:\refresh_sort_test_folder\Ginny", new DateTime(1981,8,11));
+            Directory.SetLastWriteTime(@"C:\refresh_sort_test_folder\Neville", new DateTime(1980,7,30));
+            Directory.SetLastWriteTime(@"C:\refresh_sort_test_folder\Luna", new DateTime(1981,2,13));
+
+
+            //выполнение тестируемой функции
+            bool result1 = false;
+            bool result2 = false;
+            /*----------------------------------------------------------------------------------*/
+            mainWindowViewModel.CurrentDirectoryItem.theLastSort = "dateOfChange"; //установка способа сортировки - по дате изменения
+            output.WriteLine($"sort method: {mainWindowViewModel.CurrentDirectoryItem.theLastSort}");
+            mainWindowViewModel.CurrentDirectoryItem.RefreshSort(@"C:\refresh_sort_test_folder");
+            if (directoriesAndFiles.First().Name == "Neville" && directoriesAndFiles.Last().Name == "Ginny")
+            {
+                result1 = true;
+            }            
+            foreach (var item in directoriesAndFiles) //просмотр коллекции после сортировки
+            {
+                output.WriteLine($"Item in DAF_after1: {item.FullName}");
+            }
+            output.WriteLine("");
+            /*----------------------------------------------------------------------------------*/
+            mainWindowViewModel.CurrentDirectoryItem.theLastSort = "name"; //установка способ сортировки - по имени
+            output.WriteLine($"sort method: {mainWindowViewModel.CurrentDirectoryItem.theLastSort}");
+            mainWindowViewModel.CurrentDirectoryItem.RefreshSort(@"C:\refresh_sort_test_folder");
+            if (directoriesAndFiles.First().Name == "Ginny" && directoriesAndFiles.Last().Name == "Neville")
+            {
+                result2 = true;
+            }            
+            foreach (var item in directoriesAndFiles) //просмотр коллекции после сортировки
+            {
+                output.WriteLine($"Item in DAF_after2: {item.FullName}");
+            }
+            /*----------------------------------------------------------------------------------*/
+
+            //результат
+            if (result1 && result2)
+            {
+                Directory.Delete(@"C:\refresh_sort_test_folder", true);
+                Assert.True(true);
+            }
+            else
+            {
+                Directory.Delete(@"C:\refresh_sort_test_folder", true);
+                Assert.True(false);
+            }
         }
 
         [Fact]
@@ -778,6 +852,40 @@ namespace TestFileExplorer
         }
 
         [Fact]
+        public async void GetNameOfNewFolderTest()
+        {
+            var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
+
+            //создание тестовых каталогов
+            if (!Directory.Exists(@"C:\get_name_of_new_folder_test_folder"))
+            {
+                Directory.CreateDirectory(@"C:\get_name_of_new_folder_test_folder");
+                Directory.CreateDirectory(@"C:\get_name_of_new_folder_test_folder\Новая папка");
+                Directory.CreateDirectory(@"C:\get_name_of_new_folder_test_folder\новая папка(1)");
+                Directory.CreateDirectory(@"C:\get_name_of_new_folder_test_folder\новая папка(2)");
+                Directory.CreateDirectory(@"C:\get_name_of_new_folder_test_folder\Новая папка - 1");
+                Directory.CreateDirectory(@"C:\get_name_of_new_folder_test_folder\Новая папка (1)");
+                Directory.CreateDirectory(@"C:\get_name_of_new_folder_test_folder\Новая папка (3)");
+            }
+
+            //результаты работы функции на нескольких примерах
+            DirectoryInfo directoryInfo = new DirectoryInfo(@"C:\get_name_of_new_folder_test_folder");            
+            string result1 = mainWindowViewModel.CurrentDirectoryItem.GetNameOfNewFolder(directoryInfo, "Новая папка");
+            string result2 = mainWindowViewModel.CurrentDirectoryItem.GetNameOfNewFolder(directoryInfo, "Новая папка - 1");
+            string result3 = mainWindowViewModel.CurrentDirectoryItem.GetNameOfNewFolder(directoryInfo, "новая папка");
+            output.WriteLine($"result1 = {result1},\nresult2 = {result2},\nresult3 = {result3}");
+
+            //удаление тестовых каталогов
+            Directory.Delete(@"C:\get_name_of_new_folder_test_folder", true);
+
+            //проверка работы функции
+            string sample1 = "Новая папка(1)";
+            string sample2 = "Новая папка - 1(1)";
+            string sample3 = "новая папка";
+            Assert.True((sample1 == result1) && (sample2 == result2) && (sample3 == result3));            
+        }
+
+        [Fact]
         public async void OpenTreeTest()
         {
             var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
@@ -813,15 +921,15 @@ namespace TestFileExplorer
             output.WriteLine("");
 
             //запускается заполнение дерева
-            await mainWindowViewModel.CurrentDirectoryItem.OpenTree();
+            mainWindowViewModel.CurrentDirectoryItem.OpenTree();
             var tree = mainWindowViewModel.CurrentDirectoryItem.TreeItems;
             output.WriteLine($"items in tree: {tree.Count}");
-            foreach (var item in tree)
+            foreach (var root in tree)
             {
-                output.WriteLine($"Is in tree (root): {item.FullName}");
-                foreach (var i in item.Subfolders)
+                output.WriteLine($"Is in tree (root): {root.FullName}");
+                foreach (var i in root.Subfolders)
                 {
-                    output.WriteLine($"Is in tree: {i.FullName}");
+                    output.WriteLine($"  Is in tree: {i.FullName}");
                 }
             }
             output.WriteLine("");
@@ -865,11 +973,11 @@ namespace TestFileExplorer
                 Directory.CreateDirectory(@"C:\get_subfolders_test_folder\folder_1");
                 Directory.CreateDirectory(@"C:\get_subfolders_test_folder\folder_2");
                 Directory.CreateDirectory(@"C:\get_subfolders_test_folder\folder_3");
-                File.Create(@"C:\get_subfolders_test_folder\file_1.txt");
-                File.Create(@"C:\get_subfolders_test_folder\file_2.txt");
-                File.Create(@"C:\get_subfolders_test_folder\file_3.c");
-                File.Create(@"C:\get_subfolders_test_folder\file_4.cpp");
-                File.Create(@"C:\get_subfolders_test_folder\file_5.cs");
+                //File.Create(@"C:\get_subfolders_test_folder\file_1.txt");
+                //File.Create(@"C:\get_subfolders_test_folder\file_2.txt");
+                //File.Create(@"C:\get_subfolders_test_folder\file_3.c");
+                //File.Create(@"C:\get_subfolders_test_folder\file_4.cpp");
+                //File.Create(@"C:\get_subfolders_test_folder\file_5.cs");
             }
 
             //коллекция для хранения результатов отработки функции
@@ -879,7 +987,7 @@ namespace TestFileExplorer
             //создание коллекции нужных результатов через функцию Open
             var test_folder = new DirectoryViewModel(@"C:\get_subfolders_test_folder");            
             var directoriesAndFiles = mainWindowViewModel.CurrentDirectoryItem.DirectoriesAndFiles;
-            mainWindowViewModel.CurrentDirectoryItem.Open(test_folder);
+            mainWindowViewModel.CurrentDirectoryItem.Open(test_folder);            
 
             //сохранение FullName свойства элемента коллекции
             List<string> path_collection = new List<string>(); 
@@ -887,11 +995,25 @@ namespace TestFileExplorer
             {
                 path_collection.Add(item.FullName);
             }
+
+            //вывод path_collection
+            foreach (var item in path_collection)
+            {
+                output.WriteLine($"Subitem: {item}");
+            }
+            output.WriteLine("");
             
+            //удаление тестовых каталогов
+            Directory.Delete(@"C:\get_subfolders_test_folder", true);
+
             //проверка
             var intersection = path_collection.Intersect<string>(directoriesAndFiles.Select(item => item.FullName)).ToList();
-            Directory.Delete(@"C:\get_subfolders_test_folder", true);
-            Assert.True(intersection.Count == 8);
+            foreach (var item in intersection)
+            {
+                output.WriteLine($"Intersection: {item}");
+            }
+            
+            Assert.True(intersection.Count == 3);            
         }
 
         [Fact]

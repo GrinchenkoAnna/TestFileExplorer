@@ -158,6 +158,79 @@ namespace TestFileExplorer
         }
 
         [Fact]
+        public async void AddToItemBufferTest()
+        {
+            var mainWindowViewModel = new MainWindowViewModel(synchronizationHelper);
+
+            //создние тестового каталога
+            Directory.CreateDirectory(@"C:\add_to_item_buffer_test_folder");
+            Directory.CreateDirectory(@"C:\add_to_item_buffer_test_folder\Vladimir");
+            Directory.CreateDirectory(@"C:\add_to_item_buffer_test_folder\Moskow");
+            Directory.CreateDirectory(@"C:\add_to_item_buffer_test_folder\Novosibirsk");
+            Directory.CreateDirectory(@"C:\add_to_item_buffer_test_folder\Saint Petersburg");
+            Directory.CreateDirectory(@"C:\add_to_item_buffer_test_folder\Tomsk");
+            Directory.CreateDirectory(@"C:\add_to_item_buffer_test_folder\Chelyabinsk");
+            Directory.CreateDirectory(@"C:\add_to_item_buffer_test_folder\Yakutsk");
+
+            //выполнение тестируемой функции
+            var itemBuffer = mainWindowViewModel.CurrentDirectoryItem.ItemBuffer;
+            itemBuffer.Clear();
+            mainWindowViewModel.CurrentDirectoryItem.AddToItemBuffer(@"C:\add_to_item_buffer_test_folder");
+
+            //просмотр заполненной коллекции            
+            int result = 0;
+            foreach (var item in itemBuffer)
+            {
+                if (item == @"C:\add_to_item_buffer_test_folder") { result++; }
+                else if (item == @"C:\add_to_item_buffer_test_folder\Vladimir") { result++; }
+                else if (item == @"C:\add_to_item_buffer_test_folder\Moskow") { result++; }
+                else if (item == @"C:\add_to_item_buffer_test_folder\Novosibirsk") { result++; }
+                else if (item == @"C:\add_to_item_buffer_test_folder\Saint Petersburg") { result++; }
+                else if (item == @"C:\add_to_item_buffer_test_folder\Tomsk") { result++; }
+                else if (item == @"C:\add_to_item_buffer_test_folder\Chelyabinsk") { result++; }
+                else if (item == @"C:\add_to_item_buffer_test_folder\Yakutsk") { result++; }
+                else { result--; }
+                output.WriteLine($"Item in ItemBuffer: {item}");
+            }
+
+            //удаление тестового каталога
+            Directory.Delete(@"C:\add_to_item_buffer_test_folder", true);
+
+            //проверка
+            Assert.True(result == 8);
+        }
+
+        [Fact]
+        public async void GetNameOfCopiedItem()
+        {
+            var mainWindowViewModel = new MainWindowViewModel(synchronizationHelper);
+
+            //создние тестового каталога
+            Directory.CreateDirectory(@"C:\get_name_of_copied_item_test_folder");
+            Directory.CreateDirectory(@"C:\get_name_of_copied_item_test_folder\folder");
+            Directory.CreateDirectory(@"C:\get_name_of_copied_item_test_folder\folder Ч копи€");
+            Directory.CreateDirectory(@"C:\get_name_of_copied_item_test_folder\folder Ч копи€ Ч копи€");
+            Directory.CreateDirectory(@"C:\get_name_of_copied_item_test_folder\folder1");
+
+            //выполнение тестируемой функции
+            DirectoryInfo directoryInfo = new DirectoryInfo(@"C:\get_name_of_copied_item_test_folder");
+            string result1 = mainWindowViewModel.CurrentDirectoryItem.GetNameOfCopiedItem(directoryInfo, "folder");
+            output.WriteLine($"result1 = {result1}");
+            string result2 = mainWindowViewModel.CurrentDirectoryItem.GetNameOfCopiedItem(directoryInfo, "folder1");
+            output.WriteLine($"result2 = {result2}");
+            string result3 = mainWindowViewModel.CurrentDirectoryItem.GetNameOfCopiedItem(directoryInfo, "folder2");
+            output.WriteLine($"result3 = {result3}");
+
+            //удаление тестового каталога
+            Directory.Delete(@"C:\get_name_of_copied_item_test_folder", true);
+
+            //проверка
+            Assert.True(result1 == "folder Ч копи€ Ч копи€ Ч копи€" 
+                && result2 == "folder1 Ч копи€"
+                && result3 == "folder2");
+        }
+
+        [Fact]
         public async void PasteTest()
         {
             var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
@@ -248,14 +321,58 @@ namespace TestFileExplorer
         }
 
         [Fact]
-        public async void DeleteTest()
+        public async void PasteSubItemsTest()
+        {
+            var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
+
+            //создание тестовых каталогов
+            Directory.CreateDirectory(@"C:\paste_subitems_test_folder1");
+            Directory.CreateDirectory(@"C:\paste_subitems_test_folder1\123");
+            Directory.CreateDirectory(@"C:\paste_subitems_test_folder1\456");
+            Directory.CreateDirectory(@"C:\paste_subitems_test_folder1\789");
+            Directory.CreateDirectory(@"C:\paste_subitems_test_folder1\000");
+            Directory.CreateDirectory(@"C:\paste_subitems_test_folder2");
+
+            //выполнение тестируемой функции
+            mainWindowViewModel.CurrentDirectoryItem.ItemBuffer.Add(@"C:\paste_subitems_test_folder1");
+            int result = 0;
+           await mainWindowViewModel.CurrentDirectoryItem.PasteSubitems(@"C:\paste_subitems_test_folder1\123", @"C:\paste_subitems_test_folder2");
+           await mainWindowViewModel.CurrentDirectoryItem.PasteSubitems(@"C:\paste_subitems_test_folder1\456", @"C:\paste_subitems_test_folder2");
+           await mainWindowViewModel.CurrentDirectoryItem.PasteSubitems(@"C:\paste_subitems_test_folder1\789", @"C:\paste_subitems_test_folder2");
+           await mainWindowViewModel.CurrentDirectoryItem.PasteSubitems(@"C:\paste_subitems_test_folder1\000", @"C:\paste_subitems_test_folder2");
+
+            DirectoryInfo directoryInfo = new DirectoryInfo(@"C:\paste_subitems_test_folder2");
+            var directories = directoryInfo.EnumerateDirectories();     
+            if (!directories.Any())
+            {
+                output.WriteLine("test_folder2 is empty");
+            }
+            foreach (var directory in directories)
+            {
+                if (directory.Name == "123") { result++; }
+                else if (directory.Name == "456") { result++; }
+                else if (directory.Name == "789") { result++; }
+                else if (directory.Name == "000") { result++; }
+                else { result--; }
+                output.WriteLine($"directory in test_folder2: {directory.Name}");
+            }
+
+            //удаление тестовых каталогов
+            Directory.Delete(@"C:\paste_subitems_test_folder1", true);
+            Directory.Delete(@"C:\paste_subitems_test_folder2", true);
+
+            //проверка
+            output.WriteLine($"result = {result}");
+            Assert.True(result == 4);
+        }
+
+        [Fact]
+        public async void DeleteStrTest()
         {
             var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
 
             //создание папок и файлов на диске C
             Directory.CreateDirectory(@"C:\delete_test_folder1");
-            Directory.CreateDirectory(@"C:\delete_test_folder2");
-            var folder2 = new DirectoryViewModel(@"C:\delete_test_folder2");
             //File.Create(@"C:\delete_test_file1.txt");
             //File.Create(@"C:\delete_test_file2.txt");
             //var file2 = new FileViewModel(@"C:\delete_test_file2");
@@ -263,7 +380,6 @@ namespace TestFileExplorer
             //File.SetAttributes(@"C:\delete_test_file2.txt", FileAttributes.Normal);
 
             output.WriteLine(@"Chosed folder: C:\delete_test_folder1");
-            output.WriteLine(@"Chosed folder: C:\delete_test_folder2");
             //output.WriteLine(@"Chosed file: C:\delete_test_file1.txt");
             //output.WriteLine(@"Chosed file: C:\delete_test_file2.txt");
             output.WriteLine("");
@@ -281,9 +397,7 @@ namespace TestFileExplorer
 
             //удаление папок и файлов
             mainWindowViewModel.CurrentDirectoryItem.Delete(@"C:\delete_test_folder1");
-            mainWindowViewModel.CurrentDirectoryItem.Delete(folder2.FullName);
             //mainWindowViewModel.CurrentDirectoryItem.Delete(@"C:\delete_test_file1");
-            //mainWindowViewModel.CurrentDirectoryItem.Delete(file2.FullName);
 
             //проверка: в DirectoriesAndFiles нет удаленных папок и файлов
             foreach (var item in directoriesAndFiles)
@@ -292,10 +406,6 @@ namespace TestFileExplorer
                 if (item.FullName == @"C:\delete_test_folder1")
                 {
                     Assert.True(false, "»з DAF не удалена delete_test_folder1");
-                }
-                if (item.FullName == folder2.FullName)
-                {
-                    Assert.True(false, "»з DAF не удалена delete_test_folder2");
                 }
                 //if (item.FullName == @"C:\delete_test_file1")
                 //{
@@ -312,6 +422,71 @@ namespace TestFileExplorer
             {
                 Assert.True(false, "Ќе удалена delete_test_folder1");
             }
+            //if (Directory.Exists(@"C:\delete_test_file1"))
+            //{
+            //    Assert.True(false, "Ќе удален delete_test_file1.txt");
+            //}
+            //if (Directory.Exists(@"C:\delete_test_file2"))
+            //{
+            //    Assert.True(false, "Ќе удален delete_test_file2.txt");
+            //}            
+
+            Assert.True(true);
+        }
+        
+        [Fact]
+        public async void DeleteObjTest()
+        {
+            var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
+
+            //создание папок и файлов на диске C
+            Directory.CreateDirectory(@"C:\delete_test_folder2");
+            var folder2 = new DirectoryViewModel(@"C:\delete_test_folder2");
+            //File.Create(@"C:\delete_test_file1.txt");
+            //File.Create(@"C:\delete_test_file2.txt");
+            //var file2 = new FileViewModel(@"C:\delete_test_file2");
+            //File.SetAttributes(@"C:\delete_test_file1.txt", FileAttributes.Normal);
+            //File.SetAttributes(@"C:\delete_test_file2.txt", FileAttributes.Normal);
+
+            output.WriteLine(@"Chosed folder: C:\delete_test_folder2");
+            //output.WriteLine(@"Chosed file: C:\delete_test_file1.txt");
+            //output.WriteLine(@"Chosed file: C:\delete_test_file2.txt");
+            output.WriteLine("");
+
+            //открытие директории C:\
+            var main_folder = new DirectoryViewModel(@"C:\");
+            mainWindowViewModel.CurrentDirectoryItem.Open(main_folder);
+
+            var directoriesAndFiles = mainWindowViewModel.CurrentDirectoryItem.DirectoriesAndFiles;
+            foreach (var item in directoriesAndFiles)
+            {
+                output.WriteLine($"Item in DAF_before: {item.FullName}");                
+            }
+            output.WriteLine("");
+
+            //удаление папок и файлов
+            mainWindowViewModel.CurrentDirectoryItem.Delete(folder2.FullName);
+            //mainWindowViewModel.CurrentDirectoryItem.Delete(file2.FullName);
+
+            //проверка: в DirectoriesAndFiles нет удаленных папок и файлов
+            foreach (var item in directoriesAndFiles)
+            {
+                output.WriteLine($"Item in DAF_after: {item.FullName}");
+                if (item.FullName == folder2.FullName)
+                {
+                    Assert.True(false, "»з DAF не удалена delete_test_folder2");
+                }
+                //if (item.FullName == @"C:\delete_test_file1")
+                //{
+                //    Assert.True(false, "»з DAF не удален delete_test_file1.txt");
+                //}
+                //if (item.FullName == file2.FullName)
+                //{
+                //    Assert.True(false, "»з DAF не удален delete_test_file2.txt");
+                //}
+            }
+
+            //проверка: файлы и папки удалены из системы
             if (Directory.Exists(@"C:\delete_test_folder2"))
             {
                 Assert.True(false, "Ќе удалена delete_test_folder2");
@@ -703,7 +878,9 @@ namespace TestFileExplorer
                 Directory.Delete(@"C:\sort_by_date_of_change_test_folder", true);
                 Assert.True(false);
             }
-        }[Fact]
+        }
+        
+        [Fact]
         public async void RefreshSortTest()
         {
             var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);

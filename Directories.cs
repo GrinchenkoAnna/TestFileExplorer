@@ -660,6 +660,49 @@ namespace TestFileExplorer
         }
 
         [Fact]
+        public async void AddDefaultFoldersTest()
+        {
+            var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);
+
+            //создание элементов "по умолчанию", которые будут добавлены на панель быстрого доступа
+            Directory.CreateDirectory(@"C:\add_default_folders_test_folder");
+            var folder = new DirectoryViewModel(@"C:\add_default_folders_test_folder");
+
+
+            //просмотр панели быстрого доступа до добавления элементов
+            var quickAccessPanel = mainWindowViewModel.CurrentDirectoryItem.QuickAccessItems;
+            foreach (var item in quickAccessPanel)
+            {
+                output.WriteLine($"Item in QAI_before: {item.FullName}");
+            }
+            output.WriteLine("");
+
+            mainWindowViewModel.CurrentDirectoryItem.AddDefaultFolders(folder.Name, "DefaultFolder_12345");
+
+            //просмотр панели быстрого доступа после добавления элементов
+            mainWindowViewModel.CurrentDirectoryItem.AddToQuickAccess(folder);
+            bool folder_fail = true;
+            foreach (var item in quickAccessPanel)
+            {
+                output.WriteLine($"Item in QAI_after_adding: {item.FullName}");
+                if (item.FullName == folder.FullName) { folder_fail = false; }
+            }
+            output.WriteLine("");            
+
+            Directory.Delete(@"C:\add_default_folders_test_folder", true);
+
+            //проверка
+            if (folder_fail == false)
+            {
+                Assert.True(true);
+            }
+            else
+            {
+                Assert.True(false, "folder not added");
+            }
+        }
+
+        [Fact]
         public async void AddToInformationPanelTest()
         {
             var mainWindowViewModel = new FileExplorer.ViewModels.MainWindowViewModel(synchronizationHelper);

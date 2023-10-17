@@ -2,8 +2,6 @@ C:\Users\Anna\Documents\GitHub\TestFileExplorer\bin\Debug\net6.0\CoverletSourceR
 C:\Users\Anna\Documents\GitHub\TestFileExplorer\bin\Debug\net6.0\testhost.dll
 C:\Users\Anna\Documents\GitHub\TestFileExplorer\bin\Debug\net6.0\FileExplorer.deps.json
 C:\Users\Anna\Documents\GitHub\TestFileExplorer\bin\Debug\net6.0\FileExplorer.runtimeconfig.json
-C:\Users\Anna\Documents\GitHub\TestFileExplorer\bin\Debug\net6.0\ViewModels\quickAccessFiles.json
-C:\Users\Anna\Documents\GitHub\TestFileExplorer\bin\Debug\net6.0\ViewModels\quickAccessFolders.json
 C:\Users\Anna\Documents\GitHub\TestFileExplorer\bin\Debug\net6.0\FileExplorer.exe
 C:\Users\Anna\Documents\GitHub\TestFileExplorer\bin\Debug\net6.0\testhost.exe
 C:\Users\Anna\Documents\GitHub\TestFileExplorer\bin\Debug\net6.0\xunit.runner.visualstudio.dotnetcore.testadapter.dll
